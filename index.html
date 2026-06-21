@@ -140,7 +140,7 @@
                                 <i class="fa-solid fa-folder-plus text-indigo-600"></i>
                                 Penggabungan Kode JSON Multi-Halaman
                             </h3>
-                            <p class="text-xs text-slate-500 mt-1">Tempelkan potongan JSON dari halaman yang berbeda di masing-masing kotak. Sistem akan mengonsolidasi tanpa ada data duplikat.</p>
+                            <p class="text-xs text-slate-500 mt-1">Tempelkan potongan JSON halaman tunggal atau hasil ekspor dari **Surveyor JSON Grabber (Bookmarklet)** di sini. Sistem akan mengonsolidasi tanpa ada data duplikat.</p>
                         </div>
                         <div class="flex flex-wrap gap-2 w-full lg:w-auto">
                             <button id="btnLoadSplitSample" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-lg font-medium transition flex items-center justify-center gap-1.5">
@@ -389,21 +389,26 @@
                         <p class="text-xs text-slate-500 mt-1">Cara mudah menggabungkan file paginasi monitoring kedalam satu visualisasi.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div class="flex flex-col gap-2">
                             <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-600 mb-2">1</div>
-                            <h4 class="text-xs font-bold text-slate-800">Buka Menu Input JSON</h4>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">Klik menu "Input & Kelola JSON" di bilah sidebar menu untuk menampilkan form penyunting kode terpisah.</p>
+                            <h4 class="text-xs font-bold text-slate-800">Aktifkan Sniffer Grabber</h4>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">Gunakan fitur **Surveyor JSON Grabber** (Bookmarklet) dengan mengklik tombol pintas di bilah browser saat berada di halaman web survei.</p>
                         </div>
                         <div class="flex flex-col gap-2">
                             <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-600 mb-2">2</div>
-                            <h4 class="text-xs font-bold text-slate-800">Tambah Sesuai Halaman</h4>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">Klik "+ Tambah Kotak" untuk menambah input baru. Paste data JSON per halaman dari API survei Anda ke masing-masing kotak.</p>
+                            <h4 class="text-xs font-bold text-slate-800">Jelajahi Paginasi</h4>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">Cukup klik pindah halaman dari halaman 1 hingga selesai pada situs survei. Sistem akan mengumpulkan data secara instan di belakang layar.</p>
                         </div>
                         <div class="flex flex-col gap-2">
                             <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-600 mb-2">3</div>
-                            <h4 class="text-xs font-bold text-slate-800">Proses & Analisis</h4>
-                            <p class="text-[11px] text-slate-500 leading-relaxed">Klik "Satukan & Buka Dashboard". Sistem otomatis mendeteksi kecocokan email/petugas di setiap halaman dan menyatukannya.</p>
+                            <h4 class="text-xs font-bold text-slate-800">Salin Hasil Grabber</h4>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">Tekan tombol "Salin Semua" pada panel collector untuk memindahkan semua data halaman gabungan ke memori clipboard Anda.</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <div class="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-600 mb-2">4</div>
+                            <h4 class="text-xs font-bold text-slate-800">Tempel & Analisis</h4>
+                            <p class="text-[11px] text-slate-500 leading-relaxed">Kembali ke aplikasi dashboard ini, paste langsung hasil kopian Anda ke salah satu kotak input di menu "Input & Kelola JSON" lalu proses.</p>
                         </div>
                     </div>
 
@@ -713,7 +718,7 @@
                         <i class="fa-solid fa-trash-can mr-1"></i> Hapus
                     </button>
                 </div>
-                <textarea rows="4" class="txt-json-content w-full font-mono text-[11px] bg-slate-900 text-emerald-400 p-3 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="// Tempelkan satu kode JSON di sini...">${initialValue}</textarea>
+                <textarea rows="4" class="txt-json-content w-full font-mono text-[11px] bg-slate-900 text-emerald-400 p-3 rounded-lg border border-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="// Tempelkan satu atau gabungan kode JSON di sini...">${initialValue}</textarea>
             `;
 
             // Delete action binding
@@ -763,9 +768,23 @@
 
             try {
                 const parsed = JSON.parse(rawVal);
+                
+                // Mendukung validasi array gabungan dari Bookmarklet
+                if (Array.isArray(parsed)) {
+                    const isValidArray = parsed.every(item => item && ((item.content && Array.isArray(item.content)) || (item.data && item.data.content && Array.isArray(item.data.content))));
+                    if (isValidArray) {
+                        badge.className = "badge-status text-[9px] px-2 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-600 border border-indigo-100";
+                        badge.textContent = `Valid Gabungan (${parsed.length} Halaman)`;
+                        return;
+                    }
+                }
+
                 if (parsed.content && Array.isArray(parsed.content)) {
                     badge.className = "badge-status text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-600 border border-emerald-100";
                     badge.textContent = "Valid (Format Benar)";
+                } else if (parsed.data && parsed.data.content && Array.isArray(parsed.data.content)) {
+                    badge.className = "badge-status text-[9px] px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-600 border border-emerald-100";
+                    badge.textContent = "Valid (Format BPS Respon)";
                 } else {
                     badge.className = "badge-status text-[9px] px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-600 border border-amber-100";
                     badge.textContent = "Valid JSON, tapi struktur 'content' salah";
@@ -822,11 +841,28 @@
 
                 try {
                     const parsed = JSON.parse(val);
-                    if (!parsed.content || !Array.isArray(parsed.content)) {
+                    
+                    // PENINGKATAN: Deteksi otomatis format gabungan Array hasil sadapan Bookmarklet
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(item => {
+                            if (item) {
+                                if (item.content && Array.isArray(item.content)) {
+                                    parsedBlocks.push(item);
+                                } else if (item.data && item.data.content && Array.isArray(item.data.content)) {
+                                    parsedBlocks.push(item.data);
+                                } else {
+                                    syntaxErrorCounter++;
+                                }
+                            }
+                        });
+                    } else if (parsed.content && Array.isArray(parsed.content)) {
+                        parsedBlocks.push(parsed);
+                    } else if (parsed.data && parsed.data.content && Array.isArray(parsed.data.content)) {
+                        parsedBlocks.push(parsed.data);
+                    } else {
                         syntaxErrorCounter++;
                         return;
                     }
-                    parsedBlocks.push(parsed);
                 } catch (e) {
                     syntaxErrorCounter++;
                 }
